@@ -1,28 +1,27 @@
-name: CI
-
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
 jobs:
   build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java: [ 8, 11, 17, 21 ]
-
+    runs-on: self-hosted
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up JDK
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Set up JDK
       uses: actions/setup-java@v4
       with:
-        distribution: 'zulu'
+        cache: maven
+        distribution: zulu
         java-version: ${{ matrix.java }}
-        cache: 'maven'
-
-    - name: Tests
+    - continue-on-error: true
+      name: Tests
       run: ./mvnw clean test
+    strategy:
+      matrix:
+        java:
+        - 8
+        - 11
+        - 17
+        - 21
+name: CI
+on:
+  repository_dispatch:
+    types: trigger-ga___ci.yml

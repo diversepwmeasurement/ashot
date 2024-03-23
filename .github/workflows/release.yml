@@ -1,33 +1,35 @@
-name: Release and Deploy
-
-on:
-  workflow_dispatch
-
 jobs:
   release:
-    runs-on: ubuntu-latest
-
+    runs-on: self-hosted
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    - continue-on-error: true
+      name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    - continue-on-error: true
+      name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: zulu
+        java-version: '11'
+        server-id: github
+        server-password: MAVEN_PASSWORD
+        server-username: MAVEN_USERNAME
+    - continue-on-error: true
+      env:
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        MAVEN_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        MAVEN_USERNAME: ${{ secrets.GITHUB_ACTOR }}
+      name: Release
+      run: 'git config user.email "pazonec@yandex.ru"
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-          server-id: github
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
+        git config --global user.name "Pavel Zorin"
 
-      - name: Release
-        run: |
-          git config user.email "pazonec@yandex.ru"
-          git config --global user.name "Pavel Zorin"
-          ./mvnw --batch-mode -DskipTests -X release:clean release:prepare release:perform
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          MAVEN_USERNAME: ${{ secrets.GITHUB_ACTOR }}
-          MAVEN_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ./mvnw --batch-mode -DskipTests -X release:clean release:prepare release:perform
+
+        '
+name: Release and Deploy
+on:
+  repository_dispatch:
+    types: trigger-ga___release.yml
